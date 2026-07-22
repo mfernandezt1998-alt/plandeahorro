@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Control de Ahorros - App de Presupuesto Pastel</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght=0,600;1,400&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #fcedf7 0%, #e3edf7 100%);
+            min-height: 100vh;
+        }
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .pastel-card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(145, 158, 171, 0.1);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(166, 193, 238, 0.6);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(166, 193, 238, 0.9);
+        }
+    </style>
+</head>
+<body class="py-8 px-4 sm:px-6 lg:px-8 text-gray-800">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8 flex flex-col items-center justify-center relative">
+            <span class="inline-block bg-white/60 text-indigo-600 font-semibold px-4 py-1.5 rounded-full text-xs uppercase tracking-wider mb-2 shadow-sm border border-white/40">Mi Finanza Adaptativa</span>
+            <h1 class="text-4xl sm:text-5xl font-bold text-slate-900 font-serif mb-2">Mi Diario de Ahorros</h1>
+            <p class="text-slate-600 text-sm sm:text-base max-w-lg mx-auto mb-4">Toma el control quincenal de tus ingresos en Bs., protege tus gastos fijos en $, calcula tus compras con Cashea y construye tu libertad financiera mes a mes.</p>
+            
+            <!-- Cloud Status Badge -->
+            <div class="bg-white/95 border border-indigo-100/80 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-2 text-xs">
+                <div id="syncStatusDot" class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></div>
+                <span id="syncStatusBadge" class="font-bold text-slate-500">Conectando a la Nube...</span>
+            </div>
+        </header>
+
+        <!-- Dynamic Purchase Dollar Recommendation Alert (BCV Protection) -->
+        <div id="dollarAlertArea" class="mb-6 hidden">
+            <!-- Dynamic Content injected by JS -->
+        </div>
+
+        <!-- Main Dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- LEFT COLUMN: Income Entry, Vault, and Actions -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                
+                <!-- Ingresos y Mes Card -->
+                <div class="pastel-card rounded-3xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 bg-pink-100 rounded-2xl text-pink-500">
+                                <i class="fa-solid fa-calendar-check text-xl"></i>
+                            </div>
+                            <h2 class="text-xl font-bold text-slate-800">Período Actual</h2>
+                        </div>
+                        <span class="text-[10px] bg-slate-200/60 font-semibold text-slate-700 px-2.5 py-1 rounded-lg">Moneda base: USD</span>
+                    </div>
+
+                    <!-- Month selector input -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Mes del Presupuesto</label>
+                        <input type="month" id="budgetMonth" class="w-full bg-white/90 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all font-medium">
+                    </div>
+
+                    <!-- Quincena 1 Break Down -->
+                    <div class="border border-indigo-100/80 bg-indigo-50/20 rounded-2xl p-4 mb-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <div>
+                                <span class="text-xs font-bold text-indigo-900 uppercase tracking-wider block">Quincena 1 (Q1)</span>
+                                <span class="text-[9px] text-indigo-600 font-semibold">Salario + Bonos de Ley</span>
+                            </div>
+                            <span id="q1TotalLabel" class="text-xs font-black text-indigo-700 bg-indigo-100/80 px-2.5 py-1 rounded-full">$390.00</span>
+                        </div>
+                        <div class="space-y-3.5">
+                            <!-- Salario Q1 -->
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Salario Q1</label>
+                                        <span class="text-[8px] bg-blue-100/80 text-blue-700 px-1 rounded font-bold">BCV $</span>
+                                    </span>
+                                    <span id="q1SalarioUsdLabel" class="text-[11px] font-bold text-indigo-600">$60.00</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 text-[10px] font-bold">Bs.</span>
+                                        <input type="number" id="inputQ1SalarioBs" value="43200" min="0" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
+                                    </div>
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-slate-400 text-[9px] font-bold">Tasa</span>
+                                        <input type="number" id="inputQ1SalarioTasa" value="720" min="1" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bono Alimentacion Q1 -->
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Bono Alimentación</label>
+                                        <span class="text-[8px] bg-blue-100/80 text-blue-700 px-1 rounded font-bold">BCV $</span>
+                                    </span>
+                                    <span id="q1AlimUsdLabel" class="text-[11px] font-bold text-indigo-600">$60.00</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 text-[10px] font-bold">Bs.</span>
+                                        <input type="number" id="inputQ1AlimBs" value="43200" min="0" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
+                                    </div>
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-slate-400 text-[9px] font-bold">Tasa</span>
+                                        <input type="number" id="inputQ1AlimTasa" value="720" min="1" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bono Transporte Q1 -->
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Bono Transporte</label>
+                                        <span class="text-[8px] bg-blue-100/80 text-blue-700 px-1 rounded font-bold">BCV $</span>
+                                    </span>
+                                    <span id="q1TransUsdLabel" class="text-[11px] font-bold text-indigo-600">$60.00</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 text-[10px] font-bold">Bs.</span>
+                                        <input type="number" id="inputQ1TransBs" value="43200" min="0" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
+                                    </div>
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-slate-400 text-[9px] font-bold">Tasa</span>
+                                        <input type="number" id="inputQ1TransTasa" value="720" min="1" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Variable Q1 (MES VENCIDO) -->
+                            <div class="bg-indigo-50/90 p-3 rounded-xl border border-indigo-200/60 mt-1 shadow-sm">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <label class="block text-[10px] font-black text-indigo-800 uppercase tracking-wider">Ingreso Variable Q1</label>
+                                        <span class="text-[8px] bg-indigo-200 text-indigo-800 px-1 py-0.5 rounded font-extrabold uppercase tracking-wide">Mes Vencido</span>
+                                    </span>
+                                    <span id="q1VarPercent" class="text-[10px] font-extrabold bg-indigo-200/60 text-indigo-900 px-2 py-0.5 rounded-md">100% de $210</span>
+                                </div>
+                                
+                                <!-- Dynamic Mes Vencido Label Indicator -->
+                                <span id="q1VarMesVencidoLabel" class="text-[9px] text-indigo-600 font-bold block mb-1.5">Cargado para este presupuesto</span>
+
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[10px] text-slate-400 font-medium">Total en $:</span>
+                                    <span id="q1VarUsdLabel" class="text-xs font-bold text-indigo-700">$210.00</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 text-[10px] font-bold">Bs.</span>
+                                        <input type="number" id="inputQ1VarBs" value="151200" min="0" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
+                                    </div>
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-slate-400 text-[9px] font-bold">Tasa</span>
+                                        <input type="number" id="inputQ1VarTasa" value="720" min="1" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quincena 2 Break Down -->
+                    <div class="border border-pink-100/80 bg-pink-50/20 rounded-2xl p-4 mb-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <div>
+                                <span class="text-xs font-bold text-pink-900 uppercase tracking-wider block">Quincena 2 (Q2)</span>
+                                <span class="text-[9px] text-pink-600 font-semibold">Bono + Monto Fijo</span>
+                            </div>
+                            <span id="q2TotalLabel" class="text-xs font-black text-pink-700 bg-pink-100/80 px-2.5 py-1 rounded-full">$610.00</span>
+                        </div>
+                        <div class="space-y-3.5">
+                            <!-- Bono Alimentacion Q2 -->
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Bono Alimentación</label>
+                                        <span class="text-[8px] bg-blue-100/80 text-blue-700 px-1 rounded font-bold">BCV $</span>
+                                    </span>
+                                    <span id="q2AlimUsdLabel" class="text-[11px] font-bold text-pink-600">$60.00</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 text-[10px] font-bold">Bs.</span>
+                                        <input type="number" id="inputQ2AlimBs" value="43200" min="0" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                                    </div>
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-slate-400 text-[9px] font-bold">Tasa</span>
+                                        <input type="number" id="inputQ2AlimTasa" value="720" min="1" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fijo Q2 -->
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Monto Fijo Q2</label>
+                                        <span class="text-[8px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold" title="Tasa Promedio Dólar/Euro BCV">Tasa Prom. $/€</span>
+                                    </span>
+                                    <span id="q2FijoUsdLabel" class="text-[11px] font-bold text-pink-600">$550.00</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 text-[10px] font-bold">Bs.</span>
+                                        <input type="number" id="inputQ2FijoBs" value="396000" min="0" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                                    </div>
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-slate-400 text-[9px] font-bold">Tasa</span>
+                                        <input type="number" id="inputQ2FijoTasa" value="720" min="1" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ingresos Adicionales -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Ingresos Adicionales</label>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="text-[10px] text-slate-400">Total calculado:</span>
+                            <span id="addUsdLabel" class="text-xs font-bold text-emerald-600">$0.00</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 text-[10px] font-bold">Bs.</span>
+                                <input type="number" id="inputAddBs" value="0" min="0" placeholder="0" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-all">
+                            </div>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-slate-400 text-[9px] font-bold">Tasa</span>
+                                <input type="number" id="inputAddTasa" value="720" min="1" class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-1.5 py-1 text-slate-800 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reset and Re-activate Base Values Buttons -->
+                    <div class="flex justify-end items-center border-t border-slate-200/60 pt-4 mt-4">
+                        <button onclick="resetToBaseValues()" class="text-[10px] text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100/80 font-bold px-3 py-2 rounded-xl transition-all shadow-sm border border-indigo-100/60 flex items-center gap-1" title="Vuelve a poner todos los ingresos en los montos estándar de $1000 base">
+                            <i class="fa-solid fa-rotate-left"></i> Re-activar Base ($1,000)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MI COFRE DE AHORROS (Bóveda) Card -->
+                <div id="savingsVaultCard" class="pastel-card rounded-3xl p-6 border-emerald-100 bg-gradient-to-br from-emerald-50/40 to-teal-50/40">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-2xl">
+                                <i class="fa-solid fa-vault text-xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">Mi Cofre de Ahorros</h2>
+                                <p class="text-[11px] text-slate-500">Dólares reales comprados y protegidos</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vault totals -->
+                    <div class="grid grid-cols-3 gap-2 bg-white/80 rounded-2xl p-3 border border-emerald-100/60 mb-4 text-center">
+                        <div>
+                            <span class="block text-[9px] uppercase font-bold text-slate-400">Total $</span>
+                            <span id="vaultTotalUsd" class="text-base font-black text-emerald-700">$0.00</span>
+                        </div>
+                        <div>
+                            <span class="block text-[9px] uppercase font-bold text-slate-400">Inversión Bs.</span>
+                            <span id="vaultTotalBs" class="text-[11px] font-bold text-slate-700">0.00 Bs.</span>
+                        </div>
+                        <div>
+                            <span class="block text-[9px] uppercase font-bold text-slate-400">Tasa Prom.</span>
+                            <span id="vaultAvgRate" class="text-[11px] font-semibold text-slate-500">0.00 Bs.</span>
+                        </div>
+                    </div>
+
+                    <!-- Form to register a dollar purchase -->
+                    <form id="vaultForm" onsubmit="handleRegisterVaultPurchase(event)" class="bg-white/60 border border-emerald-100 p-3 rounded-2xl mb-4">
+                        <h3 class="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-2">Registrar Compra de $</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Monto ($)</label>
+                                <input type="number" id="vaultAmount" min="0.01" step="0.01" placeholder="0.00" required class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tasa (Bs./$)</label>
+                                <input type="number" id="vaultRate" min="1" step="0.01" placeholder="720" required class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex justify-between items-center">
+                            <span id="vaultPurchaseCostPreview" class="text-[10px] text-slate-400 italic">Total: 0 Bs.</span>
+                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm transition-all">
+                                <i class="fa-solid fa-plus text-[9px]"></i> Guardar en Cofre
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- List of purchases -->
+                    <div class="max-h-[120px] overflow-y-auto border border-slate-100 rounded-xl bg-white/50 p-1">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-emerald-50 text-emerald-800 font-bold uppercase text-[9px] sticky top-0">
+                                <tr>
+                                    <th class="p-1.5 rounded-l-lg">Fecha</th>
+                                    <th class="p-1.5 text-right">Monto</th>
+                                    <th class="p-1.5 text-right">Tasa (Bs)</th>
+                                    <th class="p-1.5 text-right">Total Bs</th>
+                                    <th class="p-1.5 text-center rounded-r-lg w-6"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="vaultTableBody">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Registrar Gasto Diario Card -->
+                <div class="pastel-card rounded-3xl p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-2.5 bg-purple-100 rounded-2xl text-purple-500">
+                            <i class="fa-solid fa-receipt text-xl"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-slate-800">Registrar Gasto</h2>
+                    </div>
+
+                    <form id="expenseForm" onsubmit="handleRegisterExpense(event)">
+                        <div class="mb-4">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Concepto / Descripción</label>
+                            <input type="text" id="expenseDesc" placeholder="Ej. Compra de supermercado" required class="w-full bg-white/90 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Monto ($)</label>
+                                <input type="number" id="expenseAmount" min="0.01" step="0.01" placeholder="0.00" required class="w-full bg-white/90 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Categoría</label>
+                                <select id="expenseCategory" class="w-full bg-white/90 border border-slate-200 rounded-xl px-2 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all font-medium">
+                                    <option value="alimentos">Alimentos</option>
+                                    <option value="mascotas">Mascotas</option>
+                                    <option value="ocio">Ocio</option>
+                                    <option value="emergencias">Emergencias</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-plus text-sm"></i> Registrar Gasto
+                        </button>
+                    </form>
+                </div>
+
+                <!-- ACCIONES DE CONTROL: Guardado Manual vs Cierre de Ciclo -->
+                <div class="pastel-card rounded-3xl p-6 border-indigo-100 bg-indigo-50/10">
+                    <h3 class="text-sm font-bold text-indigo-950 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-indigo-500"></i> Acciones del Diario
+                    </h3>
+                    
+                    <p class="text-xs text-slate-500 mb-4">
+                        Usa <strong class="text-indigo-600">Sincronizar</strong> en cualquier momento para guardar tus borradores y verlos en tus otros dispositivos. Usa <strong class="text-emerald-600">Archivar</strong> solo al final del mes.
+                    </p>
+
+                    <div class="flex flex-col gap-3">
+                        <!-- Button 1: Save progress/Sincronizar (Keep current screen but push to cloud) -->
+                        <button onclick="triggerManualSync()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2.5">
+                            <i class="fa-solid fa-cloud-arrow-up text-base animate-bounce"></i> Sincronizar y Guardar Progreso
+                        </button>
+
+                        <!-- Button 2: Archive (Old "Guardar en histórico" - clear current month) -->
+                        <button onclick="triggerMonthArchive()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-4 rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-xs">
+                            <i class="fa-solid fa-box-archive"></i> Archivar Mes y Reiniciar Ciclo
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Dashboard Status, Category Progress, and CASHEA Tracker -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                
+                <!-- Quick Metrics Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Metric: Total Income -->
+                    <div class="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-white rounded-3xl p-5 flex items-center justify-between shadow-sm">
+                        <div>
+                            <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Ingresos Totales</span>
+                            <span id="metricTotalIncome" class="text-2xl sm:text-3xl font-bold text-slate-800">$1,000.00</span>
+                        </div>
+                        <div class="p-3.5 bg-white rounded-2xl text-indigo-500 shadow-sm">
+                            <i class="fa-solid fa-wallet text-xl"></i>
+                        </div>
+                    </div>
+
+                    <!-- Metric: Disponible Libre (Dinero Restante) -->
+                    <div class="bg-gradient-to-br from-amber-50 to-amber-100/50 border border-white rounded-3xl p-5 flex items-center justify-between shadow-sm">
+                        <div>
+                            <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Disponible Libre</span>
+                            <span id="metricRemainingBalance" class="text-2xl sm:text-3xl font-bold text-slate-800">$0.00</span>
+                        </div>
+                        <div id="fixedStatusIcon" class="p-3.5 bg-white rounded-2xl text-indigo-500 shadow-sm">
+                            <i class="fa-solid fa-scale-balanced text-xl"></i>
+                        </div>
+                    </div>
+
+                    <!-- Metric: Net Savings (10%) -->
+                    <div class="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-white rounded-3xl p-5 flex items-center justify-between shadow-sm">
+                        <div>
+                            <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Ahorro Reservado</span>
+                            <span id="metricSavings" class="text-2xl sm:text-3xl font-bold text-emerald-700">$44.00</span>
+                            <span id="metricSavingsCumulative" class="block text-[10px] text-slate-500 font-medium mt-0.5">Total en Cofre: $0.00</span>
+                        </div>
+                        <div class="p-3.5 bg-white rounded-2xl text-emerald-600 shadow-sm">
+                            <i class="fa-solid fa-piggy-bank text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden danger warning area -->
+                <div id="warningBar" class="hidden"></div>
+
+                <!-- CASHEA QUOTAS TRACKER -->
+                <div class="pastel-card rounded-3xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 bg-yellow-100 rounded-2xl text-yellow-600 font-bold text-lg">
+                                C
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">Mis Compras Cashea</h2>
+                                <p class="text-[11px] text-slate-500">Monitoreo de cuotas quincenales (Se descuenta del Disponible de Variables)</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Compromiso Mensual</span>
+                            <span id="casheaTotalMonthlyLabel" class="text-lg font-black text-rose-600">$0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Cashea entry form -->
+                    <form id="casheaForm" onsubmit="handleRegisterCashea(event)" class="bg-yellow-50/40 border border-yellow-100 p-4 rounded-2xl mb-4">
+                        <h3 class="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2.5">Agregar Compra en Cashea</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                            <div class="sm:col-span-4">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Descripción</label>
+                                <input type="text" id="casheaDesc" placeholder="Ej. Zapatos, Teléfono" required class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none">
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Monto Total del Producto ($)</label>
+                                <input type="number" id="casheaTotalAmount" min="0.1" step="0.01" placeholder="0.00" required class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cuota Inicial Pagada ($)</label>
+                                <input type="number" id="casheaInitialAmount" min="0" step="0.01" value="0" placeholder="0.00" required class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cuotas Restantes</label>
+                                <input type="number" id="casheaNumQuotas" min="1" max="12" value="3" required class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="mt-3 flex justify-between items-center">
+                            <span id="casheaQuotaPreview" class="text-[10px] text-amber-800 font-bold italic">Monto a Financiar: $0.00 | Cuota: $0.00 / quincena</span>
+                            <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm transition-all">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Registrar Cashea
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Active Cashea quotas list -->
+                    <div class="max-h-[140px] overflow-y-auto border border-slate-100 rounded-xl bg-white/40 p-1">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-amber-50 text-amber-800 font-bold uppercase text-[9px] sticky top-0">
+                                <tr>
+                                    <th class="p-2 rounded-l-lg">Descripción</th>
+                                    <th class="p-2 text-center">Cuotas Restantes</th>
+                                    <th class="p-2 text-right">Cuota Quincenal</th>
+                                    <th class="p-2 text-right">Mensual (x2)</th>
+                                    <th class="p-2 text-center rounded-r-lg w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="casheaTableBody">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Categories and Daily Expenses -->
+                <div class="pastel-card rounded-3xl p-6 flex-grow">
+                    <h2 class="text-2xl font-bold text-slate-800 font-serif mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                        <span>Límites de Gastos Mensuales</span>
+                        <span id="netRemanenteLabel" class="text-sm font-sans font-medium text-slate-500 bg-white/80 px-4 py-1.5 rounded-full border border-slate-200">Disponible Variables: $396.00</span>
+                    </h2>
+
+                    <!-- Categories list -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                        
+                        <!-- Categoría: Alimentos -->
+                        <div class="bg-emerald-50/50 border border-emerald-100/60 rounded-2xl p-4 flex flex-col justify-between">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <span class="text-xs font-semibold uppercase tracking-wider text-emerald-600">Alimentos (45%)</span>
+                                    <h3 id="alimRemaining" class="text-2xl font-bold text-emerald-950 mt-1">$178.20</h3>
+                                </div>
+                                <span id="alimTarget" class="text-xs font-semibold bg-emerald-100/80 text-emerald-800 px-2 py-0.5 rounded-lg">Asignado: $178.20</span>
+                            </div>
+                            <div class="w-full bg-emerald-200/40 rounded-full h-3 mb-2 overflow-hidden">
+                                <div id="alimBar" class="bg-emerald-400 h-full rounded-full transition-all" style="width: 100%"></div>
+                            </div>
+                            <span id="alimUsage" class="text-[11px] text-emerald-800/80 font-medium">Restan $178.20 de $178.20</span>
+                        </div>
+
+                        <!-- Categoría: Mascotas -->
+                        <div class="bg-indigo-50/50 border border-indigo-100/60 rounded-2xl p-4 flex flex-col justify-between">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Mascotas (22%)</span>
+                                    <h3 id="mascRemaining" class="text-2xl font-bold text-indigo-950 mt-1">$87.12</h3>
+                                </div>
+                                <span id="mascTarget" class="text-xs font-semibold bg-indigo-100/80 text-indigo-800 px-2 py-0.5 rounded-lg">Asignado: $87.12</span>
+                            </div>
+                            <div class="w-full bg-indigo-200/40 rounded-full h-3 mb-2 overflow-hidden">
+                                <div id="mascBar" class="bg-indigo-400 h-full rounded-full transition-all" style="width: 100%"></div>
+                            </div>
+                            <span id="mascUsage" class="text-[11px] text-indigo-800/80 font-medium">Restan $87.12 de $87.12</span>
+                        </div>
+
+                        <!-- Categoría: Ocio -->
+                        <div class="bg-pink-50/50 border border-pink-100/60 rounded-2xl p-4 flex flex-col justify-between">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <span class="text-xs font-semibold uppercase tracking-wider text-pink-600">Ocio (18%)</span>
+                                    <h3 id="ocioRemaining" class="text-2xl font-bold text-pink-950 mt-1">$71.28</h3>
+                                </div>
+                                <span id="ocioTarget" class="text-xs font-semibold bg-pink-100/80 text-pink-800 px-2 py-0.5 rounded-lg">Asignado: $71.28</span>
+                            </div>
+                            <div class="w-full bg-pink-200/40 rounded-full h-3 mb-2 overflow-hidden">
+                                <div id="ocioBar" class="bg-pink-400 h-full rounded-full transition-all" style="width: 100%"></div>
+                            </div>
+                            <span id="ocioUsage" class="text-[11px] text-pink-800/80 font-medium">Restan $71.28 de $71.28</span>
+                        </div>
+
+                        <!-- Categoría: Emergencias -->
+                        <div class="bg-amber-50/50 border border-amber-100/60 rounded-2xl p-4 flex flex-col justify-between">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <span class="text-xs font-semibold uppercase tracking-wider text-amber-600">Emergencias (15%)</span>
+                                    <h3 id="emergRemaining" class="text-2xl font-bold text-amber-950 mt-1">$59.40</h3>
+                                </div>
+                                <span id="emergTarget" class="text-xs font-semibold bg-amber-100/80 text-amber-800 px-2 py-0.5 rounded-lg">Asignado: $59.40</span>
+                            </div>
+                            <div class="w-full bg-amber-200/40 rounded-full h-3 mb-2 overflow-hidden">
+                                <div id="emergBar" class="bg-amber-400 h-full rounded-full transition-all" style="width: 100%"></div>
+                            </div>
+                            <span id="emergUsage" class="text-[11px] text-amber-800/80 font-medium">Restan $59.40 de $59.40</span>
+                        </div>
+
+                    </div>
+
+                    <!-- Live Expenses List -->
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-list-ul text-slate-400 text-sm"></i> Gastos Registrados en el Mes Actual
+                        </h3>
+                        <div class="max-h-[160px] overflow-y-auto border border-slate-100/80 rounded-2xl bg-white/60 p-1">
+                            <table class="w-full text-left text-xs text-slate-600 border-collapse">
+                                <thead class="bg-slate-50/80 text-slate-500 font-bold sticky top-0 uppercase">
+                                    <tr>
+                                        <th class="p-2.5 rounded-l-xl">Descripción</th>
+                                        <th class="p-2.5">Categoría</th>
+                                        <th class="p-2.5 text-right">Monto</th>
+                                        <th class="p-2.5 text-center rounded-r-xl w-12"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expensesTableBody">
+                                    <!-- Dynamic rows -->
+                                    <tr id="emptyExpensesMsg">
+                                        <td colspan="4" class="p-6 text-center text-slate-400 italic">No hay gastos registrados en el mes de hoy. ¡Buen trabajo!</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- BOTTOM SECTION: Historial Histórico (Persistent) -->
+        <div class="mt-8">
+            <div class="pastel-card rounded-3xl p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 bg-indigo-100 rounded-2xl text-indigo-500">
+                            <i class="fa-solid fa-chart-line text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 font-serif">Histórico de Meses Archivados</h2>
+                            <p class="text-xs text-slate-500">Aquí se registrarán tus balances mensuales para que veas tu progreso de ahorro a largo plazo.</p>
+                        </div>
+                    </div>
+                    <button onclick="triggerClearAllHistory()" class="text-xs font-semibold text-rose-500 hover:text-rose-600 hover:bg-rose-50/50 px-3 py-1.5 rounded-xl transition-all">
+                        <i class="fa-solid fa-trash-can"></i> Limpiar Todo el Historial
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-100 rounded-2xl bg-white/50 p-1">
+                    <table class="w-full text-left text-sm text-slate-600 border-collapse min-w-[650px]">
+                        <thead class="bg-slate-100/80 text-slate-700 font-bold sticky top-0 uppercase text-xs">
+                            <tr>
+                                <th class="p-4 rounded-l-2xl">Período</th>
+                                <th class="p-4">Ingresos Consolidados</th>
+                                <th class="p-4">Disponible Variables</th>
+                                <th class="p-4 text-emerald-600">Ahorro Generado</th>
+                                <th class="p-4">Cuotas Cashea</th>
+                                <th class="p-4">Consumo Diario</th>
+                                <th class="p-4 font-semibold">Sobrante Libre</th>
+                                <th class="p-4 text-center rounded-r-2xl w-16">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- Dynamic history rows -->
+                            <tr id="emptyHistoryMsg">
+                                <td colspan="8" class="p-8 text-center text-slate-400 italic">No hay meses guardados en el histórico. Completa tu primer mes y guárdalo arriba.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM HTML NOTIFICATION TOAST SYSTEM -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full"></div>
+
+    <!-- CUSTOM PASTEL DIALOG MODAL -->
+    <div id="customModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-white/60 transform scale-95 transition-all duration-300">
+            <div class="flex items-center gap-3 mb-4 text-slate-800">
+                <div id="modalIcon" class="p-2.5 bg-indigo-50 text-indigo-500 rounded-2xl">
+                    <i class="fa-solid fa-circle-question text-xl"></i>
+                </div>
+                <h3 id="modalTitle" class="text-lg font-bold font-serif">Confirmación</h3>
+            </div>
+            <p id="modalMessage" class="text-sm text-slate-600 mb-6"></p>
+            <div class="flex justify-end gap-3">
+                <button id="modalBtnCancel" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-xs transition-all">Cancelar</button>
+                <button id="modalBtnConfirm" class="px-5 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-xl text-xs shadow-md transition-all">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de lógicas de la aplicación con soporte Firebase Real-time Sync -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { initializeFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Core App State
+        let state = {
+            currentMonth: '',
+            q1SalarioBs: 43200,
+            q1SalarioTasa: 720,
+            q1AlimBs: 43200,
+            q1AlimTasa: 720,
+            q1TransBs: 43200,
+            q1TransTasa: 720,
+            q1VarBs: 151200,
+            q1VarTasa: 720,
+            q2AlimBs: 43200,
+            q2AlimTasa: 720,
+            q2FijoBs: 396000,
+            q2FijoTasa: 720,
+            addBs: 0,
+            addTasa: 720,
+            expenses: [],
+            casheaPurchases: [], 
+            dollarPurchases: [], 
+            history: []
+        };
+
+        // Tu configuración oficial de Firebase integrada directamente
+        const firebaseConfig = {
+            apiKey: "AIzaSyBp5s5gja1B2FhCxz1hN6NFEmiLt192s8o",
+            authDomain: "plan-de-ahorro-michelle.firebaseapp.com",
+            projectId: "plan-de-ahorro-michelle",
+            storageBucket: "plan-de-ahorro-michelle.firebasestorage.app",
+            messagingSenderId: "808292707276",
+            appId: "1:808292707276:web:10cb7a73d7d65819434b69"
+        };
+
+        const appId = 'diario-ahorro-bcv';
+        const diaryId = 'diario_michelle_principal'; // Tu identificador único fijo
+
+        let db = null;
+        let auth = null;
+        let unsubscribing = null;
+
+        async function initFirebaseAndSync() {
+            setSyncStatus('connecting');
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                
+                // Forzar long polling para eludir los bloqueos de operadoras telefónicas de Venezuela
+                db = initializeFirestore(app, {
+                    experimentalForceLongPolling: true
+                });
+                auth = getAuth(app);
+
+                await signInAnonymously(auth);
+                loadCloudData();
+
+            } catch (error) {
+                console.error("Firebase Connection Fallback.", error);
+                setSyncStatus('offline');
+                loadFallbackOffline();
+            }
+        }
+
+        function loadCloudData() {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'diarios', diaryId);
+            
+            // Suscribirse en tiempo real
+            unsubscribing = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    state = { ...state, ...cloudData };
+                    
+                    syncInputsToUI();
+                    updateCalculations();
+                    renderExpenses();
+                    renderCasheaList();
+                    renderVaultList();
+                    renderHistory();
+                    
+                    setSyncStatus('connected');
+                } else {
+                    // Si el documento en la nube no existe, escribir el estado actual
+                    saveStateToFirestoreInstant();
+                }
+            }, (error) => {
+                console.error("Cloud connection failed:", error);
+                setSyncStatus('offline');
+                loadFallbackOffline();
+            });
+        }
+
+        function syncInputsToUI() {
+            const mappings = {
+                'budgetMonth': state.currentMonth || '',
+                'inputQ1SalarioBs': state.q1SalarioBs,
+                'inputQ1SalarioTasa': state.q1SalarioTasa,
+                'inputQ1AlimBs': state.q1AlimBs,
+                'inputQ1AlimTasa': state.q1AlimTasa,
+                'inputQ1TransBs': state.q1TransBs,
+                'inputQ1TransTasa': state.q1TransTasa,
+                'inputQ1VarBs': state.q1VarBs,
+                'inputQ1VarTasa': state.q1VarTasa,
+                'inputQ2AlimBs': state.q2AlimBs,
+                'inputQ2AlimTasa': state.q2AlimTasa,
+                'inputQ2FijoBs': state.q2FijoBs,
+                'inputQ2FijoTasa': state.q2FijoTasa,
+                'inputAddBs': state.addBs,
+                'inputAddTasa': state.addTasa
+            };
+
+            for (const [id, value] of Object.entries(mappings)) {
+                const el = document.getElementById(id);
+                if (el && document.activeElement !== el) {
+                    el.value = value;
+                }
+            }
+        }
+
+        let saveTimeout;
+        function queueFirestoreSave() {
+            saveStateToLocalStorageOffline();
+            if (!db || !auth || !auth.currentUser) {
+                return;
+            }
+
+            setSyncStatus('saving');
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => {
+                await saveStateToFirestoreInstant();
+            }, 1500);
+        }
+
+        async function saveStateToFirestoreInstant() {
+            if (!db || !auth || !auth.currentUser) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'diarios', diaryId);
+                await setDoc(docRef, state);
+                setSyncStatus('connected');
+            } catch (error) {
+                console.warn("Nube inaccesible temporalmente. Salvado Local.");
+                setSyncStatus('offline');
+            }
+        }
+
+        async function triggerManualSync() {
+            setSyncStatus('saving');
+            saveStateToLocalStorageOffline();
+            
+            if (!db || !auth || !auth.currentUser) {
+                showCustomToast("No hay conexión con la nube. Guardado en tu teléfono.", "warning");
+                setSyncStatus('offline');
+                return;
+            }
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'diarios', diaryId);
+                await setDoc(docRef, state);
+                setSyncStatus('connected');
+                showCustomToast("¡Progreso sincronizado! Ya puedes verlo en tus otros dispositivos.", "success");
+            } catch (error) {
+                console.warn("Sync failed. Local saving active.", error);
+                setSyncStatus('offline');
+                showCustomToast("Guardado localmente. Se sincronizará al recuperar señal.", "info");
+            }
+        }
+
+        function loadFallbackOffline() {
+            loadStateFromLocalStorageOffline();
+            updateCalculations();
+            renderExpenses();
+            renderCasheaList();
+            renderVaultList();
+            renderHistory();
+        }
+
+        function saveStateToLocalStorageOffline() {
+            localStorage.setItem('ahorroApp_state_offline_v3', JSON.stringify(state));
+        }
+
+        function loadStateFromLocalStorageOffline() {
+            const saved = localStorage.getItem('ahorroApp_state_offline_v3');
+            if (saved) {
+                try {
+                    state = { ...state, ...JSON.parse(saved) };
+                } catch (e) {
+                    console.error("Error al decodificar LocalStorage:", e);
+                }
+            }
+        }
+
+        function setSyncStatus(status) {
+            const badge = document.getElementById('syncStatusBadge');
+            const dot = document.getElementById('syncStatusDot');
+
+            if (!badge || !dot) return;
+
+            if (status === 'connected') {
+                badge.innerText = 'Sincronizado con la Nube';
+                badge.className = "font-extrabold text-emerald-600";
+                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+            } else if (status === 'saving') {
+                badge.innerText = 'Guardando cambios...';
+                badge.className = "font-bold text-amber-500";
+                dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+            } else if (status === 'connecting') {
+                badge.innerText = 'Conectando a tu Nube...';
+                badge.className = "font-bold text-indigo-500";
+                dot.className = "w-2.5 h-2.5 rounded-full bg-indigo-500 animate-ping";
+            } else if (status === 'offline') {
+                badge.innerText = 'Modo Local Offline';
+                badge.className = "font-bold text-slate-500 text-[11px] sm:text-xs";
+                dot.className = "w-2.5 h-2.5 rounded-full bg-slate-400";
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            state.currentMonth = `${year}-${month}`;
+            document.getElementById('budgetMonth').value = state.currentMonth;
+
+            document.getElementById('vaultAmount').addEventListener('input', updateVaultPreview);
+            document.getElementById('vaultRate').addEventListener('input', updateVaultPreview);
+
+            document.getElementById('casheaTotalAmount').addEventListener('input', updateCasheaPreview);
+            document.getElementById('casheaInitialAmount').addEventListener('input', updateCasheaPreview);
+            document.getElementById('casheaNumQuotas').addEventListener('input', updateCasheaPreview);
+
+            document.getElementById('budgetMonth').addEventListener('change', (e) => {
+                state.currentMonth = e.target.value;
+                queueFirestoreSave();
+                updateCalculations();
+            });
+
+            const incomeInputIds = [
+                'inputQ1SalarioBs', 'inputQ1SalarioTasa',
+                'inputQ1AlimBs', 'inputQ1AlimTasa',
+                'inputQ1TransBs', 'inputQ1TransTasa',
+                'inputQ1VarBs', 'inputQ1VarTasa',
+                'inputQ2AlimBs', 'inputQ2AlimTasa',
+                'inputQ2FijoBs', 'inputQ2FijoTasa',
+                'inputAddBs', 'inputAddTasa'
+            ];
+
+            incomeInputIds.forEach(id => {
+                document.getElementById(id).addEventListener('input', (e) => {
+                    const cleanKey = id.replace('input', '');
+                    const stateKey = cleanKey.charAt(0).toLowerCase() + cleanKey.slice(1);
+                    state[stateKey] = parseFloat(e.target.value) || 0;
+                    queueFirestoreSave();
+                    updateCalculations();
+                });
+            });
+
+            initFirebaseAndSync();
+        });
+
+        function formatMonthName(monthString) {
+            if (!monthString) return "Período no definido";
+            const [year, month] = monthString.split('-');
+            const monthsNames = [
+                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+            ];
+            const monthIndex = parseInt(month, 10) - 1;
+            return `${monthsNames[monthIndex]} ${year}`;
+        }
+
+        // Obtener el mes de hace exactamente 2 meses (ej: de Julio es Mayo)
+        function getTwoMonthsAgoLabel(monthString) {
+            if (!monthString) return "";
+            const [year, month] = monthString.split('-').map(Number);
+            let targetMonth = month - 2;
+            let targetYear = year;
+            if (targetMonth <= 0) {
+                targetMonth = 12 + targetMonth;
+                targetYear = year - 1;
+            }
+            const monthsNames = [
+                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+            ];
+            return `${monthsNames[targetMonth - 1]} ${targetYear}`;
+        }
+
+        let calculations = {};
+        function updateCalculations() {
+            const q1SalarioUsd = state.q1SalarioTasa > 0 ? (state.q1SalarioBs / state.q1SalarioTasa) : 0;
+            const q1AlimUsd = state.q1AlimTasa > 0 ? (state.q1AlimBs / state.q1AlimTasa) : 0;
+            const q1TransUsd = state.q1TransTasa > 0 ? (state.q1TransBs / state.q1TransTasa) : 0;
+            const q1VarUsd = state.q1VarTasa > 0 ? (state.q1VarBs / state.q1VarTasa) : 0;
+
+            const q2AlimUsd = state.q2AlimTasa > 0 ? (state.q2AlimBs / state.q2AlimTasa) : 0;
+            const q2FijoUsd = state.q2FijoTasa > 0 ? (state.q2FijoBs / state.q2FijoTasa) : 0;
+
+            const addUsd = state.addTasa > 0 ? (state.addBs / state.addTasa) : 0;
+
+            document.getElementById('q1SalarioUsdLabel').innerText = `$${q1SalarioUsd.toFixed(2)}`;
+            document.getElementById('q1AlimUsdLabel').innerText = `$${q1AlimUsd.toFixed(2)}`;
+            document.getElementById('q1TransUsdLabel').innerText = `$${q1TransUsd.toFixed(2)}`;
+            document.getElementById('q1VarUsdLabel').innerText = `$${q1VarUsd.toFixed(2)}`;
+            document.getElementById('q2AlimUsdLabel').innerText = `$${q2AlimUsd.toFixed(2)}`;
+            document.getElementById('q2FijoUsdLabel').innerText = `$${q2FijoUsd.toFixed(2)}`;
+            document.getElementById('addUsdLabel').innerText = `$${addUsd.toFixed(2)}`;
+
+            // Dinámico mes vencido (2 meses atrás)
+            const currentMonthName = formatMonthName(state.currentMonth).split(' ')[0];
+            const workedMonthLabel = getTwoMonthsAgoLabel(state.currentMonth);
+            document.getElementById('q1VarMesVencidoLabel').innerText = `Cobrado en ${currentMonthName} (Trabajado en ${workedMonthLabel})`;
+
+            const q1Sum = q1SalarioUsd + q1AlimUsd + q1TransUsd + q1VarUsd;
+            const q2Sum = q2AlimUsd + q2FijoUsd;
+
+            document.getElementById('q1TotalLabel').innerText = `$${q1Sum.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('q2TotalLabel').innerText = `$${q2Sum.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            const variablePercent = (q1VarUsd / 210) * 100;
+            document.getElementById('q1VarPercent').innerText = `${variablePercent.toFixed(0)}% del max ($210)`;
+
+            // Ingresos Consolidados
+            const totalIncome = q1Sum + q2Sum + addUsd;
+            calculations.totalIncome = totalIncome;
+
+            // Ahorro obligatorio del 10% de los ingresos consolidados
+            const savingsTarget = totalIncome * 0.10;
+            calculations.savingsTarget = savingsTarget;
+
+            let totalUsd = 0;
+            let totalBs = 0;
+            let currentMonthVaultPurchases = 0;
+
+            state.dollarPurchases.forEach(item => {
+                totalUsd += item.usdAmount;
+                totalBs += item.totalBs;
+                if (!item.period || item.period === state.currentMonth) {
+                    currentMonthVaultPurchases += item.usdAmount;
+                }
+            });
+
+            const actualSavingsDeduction = Math.max(savingsTarget, currentMonthVaultPurchases);
+            calculations.actualSavingsDeduction = actualSavingsDeduction;
+
+            // Cuotas Cashea
+            let totalCasheaMonthly = 0;
+            state.casheaPurchases.forEach(item => {
+                totalCasheaMonthly += (item.quotaAmount * 2);
+            });
+            calculations.totalCasheaMonthly = totalCasheaMonthly;
+            document.getElementById('casheaTotalMonthlyLabel').innerText = `$${totalCasheaMonthly.toFixed(2)}`;
+
+            // Disponible Inicial para Variables
+            const variablePool = Math.max(0, totalIncome - actualSavingsDeduction - totalCasheaMonthly);
+            calculations.variablePool = variablePool;
+
+            // Suma total de los consumos diarios
+            let totalDailyExpenses = 0;
+            state.expenses.forEach(exp => {
+                totalDailyExpenses += exp.amount;
+            });
+            calculations.totalDailyExpenses = totalDailyExpenses;
+
+            // Dinero Neto Disponible Libre que va quedando
+            const remainingBalance = Math.max(0, variablePool - totalDailyExpenses);
+            calculations.remainingBalance = remainingBalance;
+
+            // Seteo de los indicadores métricos principales
+            const remainingBalanceLabel = document.getElementById('metricRemainingBalance');
+            const fixedStatusIcon = document.getElementById('fixedStatusIcon');
+            if (remainingBalanceLabel) {
+                remainingBalanceLabel.innerText = `$${remainingBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+            if (fixedStatusIcon) {
+                if (remainingBalance > 0) {
+                    fixedStatusIcon.className = "p-3.5 bg-white rounded-2xl text-indigo-500 shadow-sm";
+                    fixedStatusIcon.innerHTML = `<i class="fa-solid fa-scale-balanced text-xl"></i>`;
+                } else {
+                    fixedStatusIcon.className = "p-3.5 bg-white rounded-2xl text-rose-500 shadow-sm animate-pulse";
+                    fixedStatusIcon.innerHTML = `<i class="fa-solid fa-circle-exclamation text-xl"></i>`;
+                }
+            }
+
+            document.getElementById('metricTotalIncome').innerText = `$${totalIncome.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('metricSavings').innerText = `$${actualSavingsDeduction.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('netRemanenteLabel').innerText = `Disponible Variables: $${variablePool.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            document.getElementById('metricSavingsCumulative').innerText = `En Cofre: $${totalUsd.toFixed(2)} | Comprado este mes: $${currentMonthVaultPurchases.toFixed(2)}`;
+
+            calculations.limits = {
+                alimentos: variablePool * 0.45,
+                mascotas: variablePool * 0.22,
+                ocio: variablePool * 0.18,
+                emergencias: variablePool * 0.15
+            };
+
+            calculations.spent = {
+                alimentos: 0,
+                mascotas: 0,
+                ocio: 0,
+                emergencias: 0
+            };
+
+            state.expenses.forEach(exp => {
+                if (calculations.spent[exp.category] !== undefined) {
+                    calculations.spent[exp.category] += exp.amount;
+                }
+            });
+
+            updateCategoryUI('alim', calculations.limits.alimentos, calculations.spent.alimentos);
+            updateCategoryUI('masc', calculations.limits.mascotas, calculations.spent.mascotas);
+            updateCategoryUI('ocio', calculations.limits.ocio, calculations.spent.ocio);
+            updateCategoryUI('emerg', calculations.limits.emergencias, calculations.spent.emergencias);
+
+            renderDollarAlert(savingsTarget, variablePool);
+        }
+
+        // Restablece los ingresos editados manualmente a los valores base de la plantilla de $1000 USD
+        function resetToBaseValues() {
+            showCustomConfirm(
+                "Restablecer Valores Base",
+                "¿Deseas restablecer los ingresos de las quincenas a los montos estándar de $1000 (tasas en 720 Bs./$)? Esto sobreescribirá los ingresos que hayas editado manualmente para este mes.",
+                () => {
+                    state.q1SalarioBs = 43200;
+                    state.q1SalarioTasa = 720;
+                    state.q1AlimBs = 43200;
+                    state.q1AlimTasa = 720;
+                    state.q1TransBs = 43200;
+                    state.q1TransTasa = 720;
+                    state.q1VarBs = 151200;
+                    state.q1VarTasa = 720;
+                    state.q2AlimBs = 43200;
+                    state.q2AlimTasa = 720;
+                    state.q2FijoBs = 396000;
+                    state.q2FijoTasa = 720;
+                    state.addBs = 0;
+                    state.addTasa = 720;
+                    
+                    queueFirestoreSave();
+                    syncInputsToUI();
+                    updateCalculations();
+                    showCustomToast("Valores base de $1000 restablecidos con éxito.", "success");
+                }
+            );
+        }
+
+        function updateCategoryUI(prefix, limit, spent) {
+            const remaining = Math.max(0, limit - spent);
+            const rawPercentage = limit > 0 ? (remaining / limit) * 100 : 0;
+            const percentage = Math.min(100, Math.max(0, rawPercentage));
+
+            const remainingText = document.getElementById(`${prefix}Remaining`);
+            const targetText = document.getElementById(`${prefix}Target`);
+            const barElement = document.getElementById(`${prefix}Bar`);
+            const usageText = document.getElementById(`${prefix}Usage`);
+
+            remainingText.innerText = `$${remaining.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            targetText.innerText = `Límite: $${limit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            usageText.innerText = `Gastado: $${spent.toFixed(2)} • Restante: $${remaining.toFixed(2)}`;
+
+            barElement.style.width = `${percentage}%`;
+
+            if (percentage <= 15 && spent > 0) {
+                barElement.className = "bg-rose-400 h-full rounded-full transition-all duration-300";
+            } else if (percentage <= 40) {
+                barElement.className = "bg-amber-400 h-full rounded-full transition-all duration-300";
+            } else {
+                barElement.className = "bg-indigo-400 h-full rounded-full transition-all duration-300";
+            }
+        }
+
+        function renderDollarAlert(savings, variablePool) {
+            const area = document.getElementById('dollarAlertArea');
+            if (savings <= 0) {
+                area.innerHTML = '';
+                area.classList.add('hidden');
+                return;
+            }
+
+            area.classList.remove('hidden');
+            const totalBuyPossibility = savings.toFixed(2);
+            
+            area.innerHTML = `
+                <div class="bg-gradient-to-r from-emerald-100/90 to-teal-100/95 border border-emerald-200/80 rounded-3xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm animate-fade-in">
+                    <div class="flex items-start gap-3.5">
+                        <div class="p-3 bg-white text-emerald-600 rounded-2xl shadow-sm text-xl flex-shrink-0">
+                            $
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-emerald-950 text-sm sm:text-base">¡Momento de proteger tu dinero!</h4>
+                            <p class="text-xs text-emerald-800 leading-relaxed max-w-2xl mt-0.5">
+                                Tienes un <strong>Ahorro Obligatorio de $${totalBuyPossibility} USD</strong> generado este mes. Te recomendamos comprar este monto en dólares en efectivo para protegerlos de la devaluación.
+                            </p>
+                            <button onclick="autofillVaultForm(${totalBuyPossibility})" class="mt-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold py-1.5 px-3 rounded-xl transition-all shadow-sm flex items-center gap-1">
+                                <i class="fa-solid fa-file-invoice-dollar"></i> Registrar esta compra en mi Cofre
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-white/80 border border-emerald-300/40 rounded-2xl px-4 py-2 text-center flex-shrink-0 self-stretch flex flex-col justify-center">
+                        <span class="text-[9px] uppercase font-bold text-emerald-700 block">Sugerido para comprar</span>
+                        <span class="text-lg font-black text-emerald-800">$${totalBuyPossibility} USD</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleRegisterVaultPurchase(e) {
+            e.preventDefault();
+            const amountInput = document.getElementById('vaultAmount');
+            const rateInput = document.getElementById('vaultRate');
+
+            const usdAmount = parseFloat(amountInput.value);
+            const rate = parseFloat(rateInput.value);
+
+            if (isNaN(usdAmount) || usdAmount <= 0 || isNaN(rate) || rate <= 0) {
+                showCustomToast('Por favor introduce montos y tasas de compra válidos.', 'error');
+                return;
+            }
+
+            const totalBs = usdAmount * rate;
+            const today = new Date();
+            const formattedDate = `${today.getDate()}/${today.getMonth() + 1}`;
+
+            const newPurchase = {
+                id: Date.now(),
+                date: formattedDate,
+                period: state.currentMonth, 
+                usdAmount: usdAmount,
+                rate: rate,
+                totalBs: totalBs
+            };
+
+            state.dollarPurchases.push(newPurchase);
+            queueFirestoreSave();
+            updateCalculations();
+            renderVaultList();
+
+            amountInput.value = '';
+            document.getElementById('vaultPurchaseCostPreview').innerText = 'Total: 0 Bs.';
+            showCustomToast(`¡$${usdAmount.toFixed(2)} guardados en tu Cofre con éxito!`, 'success');
+        }
+
+        function updateVaultPreview() {
+            const amount = parseFloat(document.getElementById('vaultAmount').value) || 0;
+            const rate = parseFloat(document.getElementById('vaultRate').value) || 0;
+            const cost = amount * rate;
+            document.getElementById('vaultPurchaseCostPreview').innerText = `Total: ${cost.toLocaleString('es-VE', {maximumFractionDigits: 2})} Bs.`;
+        }
+
+        function updateCasheaPreview() {
+            const total = parseFloat(document.getElementById('casheaTotalAmount').value) || 0;
+            const initial = parseFloat(document.getElementById('casheaInitialAmount').value) || 0;
+            const quotas = parseInt(document.getElementById('casheaNumQuotas').value, 10) || 1;
+            
+            const remainingToFinance = Math.max(0, total - initial);
+            const quotaVal = quotas > 0 ? (remainingToFinance / quotas) : 0;
+            
+            document.getElementById('casheaQuotaPreview').innerText = `Monto a Financiar: $${remainingToFinance.toFixed(2)} | Cuota: $${quotaVal.toFixed(2)} / quincena`;
+        }
+
+        function autofillVaultForm(amount) {
+            document.getElementById('vaultAmount').value = amount;
+            const rate = state.q1VarTasa || 720;
+            document.getElementById('vaultRate').value = rate;
+            updateVaultPreview();
+
+            document.getElementById('savingsVaultCard').scrollIntoView({ behavior: 'smooth' });
+            showCustomToast(`Se cargaron $${amount} listos para registrar en tu Cofre.`, 'info');
+        }
+
+        function renderVaultList() {
+            const tbody = document.getElementById('vaultTableBody');
+            tbody.innerHTML = '';
+
+            let totalUsd = 0;
+            let totalBs = 0;
+
+            state.dollarPurchases.forEach(item => {
+                totalUsd += item.usdAmount;
+                totalBs += item.totalBs;
+            });
+
+            const avgRate = totalUsd > 0 ? (totalBs / totalUsd) : 0;
+
+            document.getElementById('vaultTotalUsd').innerText = `$${totalUsd.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('vaultTotalBs').innerText = `${totalBs.toLocaleString('es-VE', {maximumFractionDigits: 0})} Bs.`;
+            document.getElementById('vaultAvgRate').innerText = `${avgRate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`;
+
+            if (state.dollarPurchases.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="p-3 text-center text-slate-400 italic text-[10px]">Aún no has registrado compras de dólares en el cofre.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            state.dollarPurchases.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-emerald-100/50 hover:bg-emerald-50/20 transition-all font-medium text-slate-700 text-xs";
+                
+                tr.innerHTML = `
+                    <td class="p-1.5 font-bold text-slate-500">${escapeHTML(item.date)}</td>
+                    <td class="p-1.5 text-right text-emerald-700 font-extrabold">$${item.usdAmount.toFixed(2)}</td>
+                    <td class="p-1.5 text-right font-semibold text-slate-500">${item.rate.toFixed(1)}</td>
+                    <td class="p-1.5 text-right text-slate-600">${Math.round(item.totalBs).toLocaleString('es-VE')} Bs.</td>
+                    <td class="p-1.5 text-center">
+                        <button onclick="deleteVaultItem(${item.id})" class="text-rose-400 hover:text-rose-600 transition-all" title="Eliminar compra de dólares">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteVaultItem(id) {
+            state.dollarPurchases = state.dollarPurchases.filter(item => item.id !== id);
+            queueFirestoreSave();
+            updateCalculations();
+            renderVaultList();
+            showCustomToast('Registro de compra de dólares eliminado.', 'info');
+        }
+
+        function handleRegisterCashea(e) {
+            e.preventDefault();
+            const descInput = document.getElementById('casheaDesc');
+            const totalAmountInput = document.getElementById('casheaTotalAmount');
+            const initialAmountInput = document.getElementById('casheaInitialAmount');
+            const numQuotasInput = document.getElementById('casheaNumQuotas');
+
+            const totalAmount = parseFloat(totalAmountInput.value);
+            const initialAmount = parseFloat(initialAmountInput.value) || 0;
+            const remaining = parseInt(numQuotasInput.value, 10);
+
+            if (isNaN(totalAmount) || totalAmount <= 0 || isNaN(remaining) || remaining <= 0) {
+                showCustomToast('Por favor introduce valores de compra válidos.', 'error');
+                return;
+            }
+
+            if (initialAmount >= totalAmount) {
+                showCustomToast('La inicial no puede ser mayor o igual al costo total del producto.', 'error');
+                return;
+            }
+
+            const remainingToFinance = totalAmount - initialAmount;
+            const quotaAmount = remainingToFinance / remaining;
+
+            const newCashea = {
+                id: Date.now(),
+                description: descInput.value.trim(),
+                totalAmount: totalAmount,
+                initialAmount: initialAmount,
+                quotaAmount: quotaAmount,
+                remainingQuotas: remaining
+            };
+
+            state.casheaPurchases.push(newCashea);
+            queueFirestoreSave();
+            updateCalculations();
+            renderCasheaList();
+
+            descInput.value = '';
+            totalAmountInput.value = '';
+            initialAmountInput.value = '0';
+            numQuotasInput.value = '3';
+            document.getElementById('casheaQuotaPreview').innerText = 'Monto a Financiar: $0.00 | Cuota: $0.00 / quincena';
+            showCustomToast('Compra de Cashea guardada y cuota calculada sobre el saldo financiado.', 'success');
+        }
+
+        function renderCasheaList() {
+            const tbody = document.getElementById('casheaTableBody');
+            tbody.innerHTML = '';
+
+            if (state.casheaPurchases.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="p-4 text-center text-slate-400 italic text-[11px]">No tienes cuotas de Cashea pendientes este mes.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            state.casheaPurchases.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-amber-100/50 hover:bg-amber-50/20 transition-all font-medium text-slate-700 text-xs";
+                
+                const monthlyCost = item.quotaAmount * 2;
+                const displayTotal = item.totalAmount ? item.totalAmount.toFixed(2) : (item.quotaAmount * item.remainingQuotas).toFixed(2);
+                const displayInitial = item.initialAmount && item.initialAmount > 0 ? ` (Inicial: $${item.initialAmount.toFixed(2)})` : '';
+
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-slate-800">
+                        ${escapeHTML(item.description)}
+                        <span class="text-[9px] text-slate-400 block font-normal">Costo: $${displayTotal}${displayInitial}</span>
+                    </td>
+                    <td class="p-2 text-center">
+                        <span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-[10px] font-bold">${item.remainingQuotas} ctas</span>
+                    </td>
+                    <td class="p-2 text-right font-semibold text-slate-600">$${item.quotaAmount.toFixed(2)}</td>
+                    <td class="p-2 text-right font-black text-amber-900">$${monthlyCost.toFixed(2)}</td>
+                    <td class="p-2 text-center">
+                        <button onclick="deleteCasheaItem(${item.id})" class="text-rose-400 hover:text-rose-600 transition-all" title="Eliminar compra">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteCasheaItem(id) {
+            state.casheaPurchases = state.casheaPurchases.filter(item => item.id !== id);
+            queueFirestoreSave();
+            updateCalculations();
+            renderCasheaList();
+            showCustomToast('Compra de Cashea deudora eliminada.', 'info');
+        }
+
+        // --- MANEJO DE GASTOS DIARIOS ---
+        function handleRegisterExpense(e) {
+            e.preventDefault();
+            const descInput = document.getElementById('expenseDesc');
+            const amtInput = document.getElementById('expenseAmount');
+            const catInput = document.getElementById('expenseCategory');
+
+            const amount = parseFloat(amtInput.value);
+            if (isNaN(amount) || amount <= 0) return;
+
+            const targetCategory = catInput.value;
+            const categoryLimit = calculations.limits[targetCategory] || 0;
+            const categorySpent = calculations.spent[targetCategory] || 0;
+            const remainingBudget = categoryLimit - categorySpent;
+
+            if (amount > remainingBudget && categoryLimit > 0) {
+                showCustomToast(`Alerta: Este gasto supera tu presupuesto restante para ${targetCategory}.`, 'warning');
+            }
+
+            const newExpense = {
+                id: Date.now(),
+                description: descInput.value.trim(),
+                amount: amount,
+                category: catInput.value
+            };
+
+            state.expenses.unshift(newExpense); 
+            queueFirestoreSave();
+            updateCalculations();
+            renderExpenses();
+
+            descInput.value = '';
+            amtInput.value = '';
+            showCustomToast('Gasto registrado con éxito.', 'success');
+        }
+
+        function renderExpenses() {
+            const tbody = document.getElementById('expensesTableBody');
+            const emptyMsg = document.getElementById('emptyExpensesMsg');
+
+            tbody.innerHTML = '';
+
+            if (state.expenses.length === 0) {
+                tbody.appendChild(emptyMsg);
+                return;
+            }
+
+            const catMap = {
+                alimentos: { label: 'Alimentos', bg: 'bg-emerald-100 text-emerald-800' },
+                mascotas: { label: 'Mascotas', bg: 'bg-indigo-100 text-indigo-800' },
+                ocio: { label: 'Ocio', bg: 'bg-pink-100 text-pink-800' },
+                emergencias: { label: 'Emergencias', bg: 'bg-amber-100 text-amber-800' }
+            };
+
+            state.expenses.forEach(exp => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50/50 transition-all animate-fade-in";
+
+                const displayCat = catMap[exp.category] || { label: exp.category, bg: 'bg-slate-100' };
+
+                tr.innerHTML = `
+                    <td class="p-2.5 font-medium text-slate-800">${escapeHTML(exp.description)}</td>
+                    <td class="p-2.5">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${displayCat.bg}">${displayCat.label}</span>
+                    </td>
+                    <td class="p-2.5 text-right font-semibold text-slate-800">$${exp.amount.toFixed(2)}</td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="deleteExpense(${exp.id})" class="text-rose-400 hover:text-rose-600 transition-all">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteExpense(id) {
+            state.expenses = state.expenses.filter(exp => exp.id !== id);
+            queueFirestoreSave();
+            updateCalculations();
+            renderExpenses();
+            showCustomToast('Gasto diario eliminado.', 'info');
+        }
+
+        function triggerMonthArchive() {
+            const monthLabel = formatMonthName(state.currentMonth);
+            const totalIncome = calculations.totalIncome || 0;
+
+            if (totalIncome <= 0) {
+                showCustomToast("Por favor, ingresa ingresos antes de archivar.", "error");
+                return;
+            }
+
+            showCustomConfirm(
+                "Archivar Mes", 
+                `¿Deseas archivar el presupuesto de ${monthLabel}? Esto guardará los resultados, descontará cuotas de tu Cashea y borrará los gastos del mes para empezar un ciclo nuevo.`,
+                () => {
+                    executeMonthArchive();
+                }
+            );
+        }
+
+        function executeMonthArchive() {
+            let totalSpent = 0;
+            state.expenses.forEach(exp => totalSpent += exp.amount);
+
+            const savingsGained = calculations.actualSavingsDeduction;
+            const remainingFree = Math.max(0, calculations.variablePool - totalSpent);
+            const totalCasheaMonthly = calculations.totalCasheaMonthly;
+
+            const historyRecord = {
+                id: Date.now(),
+                period: state.currentMonth,
+                periodLabel: formatMonthName(state.currentMonth),
+                income: calculations.totalIncome,
+                variablePool: calculations.variablePool,
+                savings: savingsGained,
+                cashea: totalCasheaMonthly,
+                spent: totalSpent,
+                remaining: remainingFree
+            };
+
+            state.history.unshift(historyRecord);
+
+            state.casheaPurchases = state.casheaPurchases.map(item => {
+                return {
+                    ...item,
+                    remainingQuotas: item.remainingQuotas - 1
+                };
+            }).filter(item => item.remainingQuotas > 0); 
+
+            state.expenses = [];
+            state.addBs = 0;
+            document.getElementById('inputAddBs').value = 0;
+            
+            const [year, month] = state.currentMonth.split('-');
+            let nextMonthNum = parseInt(month, 10) + 1;
+            let nextYearNum = parseInt(year, 10);
+            if (nextMonthNum > 12) {
+                nextMonthNum = 1;
+                nextYearNum++;
+            }
+            state.currentMonth = `${nextYearNum}-${String(nextMonthNum).padStart(2, '0')}`;
+            document.getElementById('budgetMonth').value = state.currentMonth;
+
+            queueFirestoreSave();
+            updateCalculations();
+            renderExpenses();
+            renderCasheaList();
+            renderVaultList();
+            renderHistory();
+
+            showCustomToast("¡Mes guardado exitosamente en tu Histórico!", "success");
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            const emptyMsg = document.getElementById('emptyHistoryMsg');
+
+            tbody.innerHTML = '';
+
+            if (state.history.length === 0) {
+                tbody.appendChild(emptyMsg);
+                return;
+            }
+
+            state.history.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50/70 transition-all font-medium text-slate-700 text-xs";
+
+                const casheaVal = item.cashea !== undefined ? item.cashea : 0;
+                const varPoolVal = item.variablePool !== undefined ? item.variablePool : (item.income * 0.90 - casheaVal);
+
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-slate-900">${escapeHTML(item.periodLabel)}</td>
+                    <td class="p-4">$${item.income.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td class="p-4 text-slate-500">$${varPoolVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td class="p-4 text-emerald-600 font-semibold">$${item.savings.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td class="p-4 text-amber-600">$${casheaVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td class="p-4 text-slate-500">$${item.spent.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td class="p-4 font-bold text-slate-800">$${item.remaining.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="triggerDeleteHistoryItem(${item.id})" class="text-rose-400 hover:text-rose-600 px-2 py-1 hover:bg-rose-50 rounded-lg transition-all" title="Eliminar Registro">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function triggerDeleteHistoryItem(id) {
+            showCustomConfirm(
+                "Borrar Registro Histórico",
+                "¿Estás seguro de que deseas borrar este registro de forma permanente? No se podrá recuperar.",
+                () => {
+                    state.history = state.history.filter(item => item.id !== id);
+                    queueFirestoreSave();
+                    renderHistory();
+                    showCustomToast("Registro histórico eliminado.", "info");
+                }
+            );
+        }
+
+        function triggerClearAllHistory() {
+            showCustomConfirm(
+                "¡ADVERTENCIA CRÍTICA!",
+                "Esto borrará permanentemente todo tu histórico y tu cofre de ahorros. ¿Deseas continuar?",
+                () => {
+                    state.history = [];
+                    state.dollarPurchases = [];
+                    queueFirestoreSave();
+                    renderHistory();
+                    renderVaultList();
+                    showCustomToast("Se ha limpiado el historial y el cofre.", "warning");
+                }
+            );
+        }
+
+        let activeConfirmCallback = null;
+
+        function showCustomConfirm(title, message, onConfirm) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerText = message;
+            activeConfirmCallback = onConfirm;
+
+            const modal = document.getElementById('customModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            const isDanger = title.includes("ADVERTENCIA") || title.includes("Borrar") || title.includes("Limpiar") || title.includes("crítica") || title.includes("CRÍTICA");
+            const iconDiv = document.getElementById('modalIcon');
+            if (isDanger) {
+                iconDiv.className = "p-2.5 bg-rose-100 text-rose-500 rounded-2xl";
+                iconDiv.innerHTML = '<i class="fa-solid fa-circle-exclamation text-xl"></i>';
+            } else {
+                iconDiv.className = "p-2.5 bg-indigo-50 text-indigo-500 rounded-2xl";
+                iconDiv.innerHTML = '<i class="fa-solid fa-circle-question text-xl"></i>';
+            }
+        }
+
+        document.getElementById('modalBtnCancel').addEventListener('click', closeCustomModal);
+        document.getElementById('modalBtnConfirm').addEventListener('click', () => {
+            if (typeof activeConfirmCallback === 'function') {
+                activeConfirmCallback();
+            }
+            closeCustomModal();
+        });
+
+        function closeCustomModal() {
+            const modal = document.getElementById('customModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            activeConfirmCallback = null;
+        }
+
+        function showCustomToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bgClass = "bg-emerald-50 border-emerald-100 text-emerald-800";
+            let iconCode = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+
+            if (type === 'warning') {
+                bgClass = "bg-amber-50 border-amber-100 text-amber-800";
+                iconCode = '<i class="fa-solid fa-circle-exclamation text-amber-500"></i>';
+            } else if (type === 'error') {
+                bgClass = "bg-rose-50 border-rose-100 text-rose-800";
+                iconCode = '<i class="fa-solid fa-triangle-exclamation text-rose-500"></i>';
+            } else if (type === 'info') {
+                bgClass = "bg-indigo-50 border-indigo-100 text-indigo-800";
+                iconCode = '<i class="fa-solid fa-circle-info text-indigo-500"></i>';
+            }
+
+            toast.className = `p-4 rounded-2xl border flex items-center gap-3 shadow-lg ${bgClass} transition-all duration-300 transform translate-y-2 opacity-0`;
+            toast.innerHTML = `
+                <div class="text-lg flex-shrink-0">${iconCode}</div>
+                <div class="text-xs font-semibold flex-grow">${message}</div>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4500);
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // Bind core triggers to Global Window for module scopes
+        window.handleRegisterVaultPurchase = handleRegisterVaultPurchase;
+        window.autofillVaultForm = autofillVaultForm;
+        window.deleteVaultItem = deleteVaultItem;
+        window.handleRegisterCashea = handleRegisterCashea;
+        window.deleteCasheaItem = deleteCasheaItem;
+        window.handleRegisterExpense = handleRegisterExpense;
+        window.deleteExpense = deleteExpense;
+        window.triggerMonthArchive = triggerMonthArchive;
+        window.triggerDeleteHistoryItem = triggerDeleteHistoryItem;
+        window.triggerClearAllHistory = triggerClearAllHistory;
+        window.closeCustomModal = closeCustomModal;
+        window.updateCasheaPreview = updateCasheaPreview;
+        window.resetToBaseValues = resetToBaseValues;
+        window.triggerManualSync = triggerManualSync;
+    </script>
+</body>
+</html>
