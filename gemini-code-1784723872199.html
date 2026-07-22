@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista Previa - Plan de Ahorro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <header class="bg-indigo-600 text-white p-6 rounded-2xl shadow-lg flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold">Plan de Ahorro & Diario Financiero</h1>
+                <p class="text-indigo-200 text-xs">Vista Previa Interactiva</p>
+            </div>
+            <span class="bg-emerald-500 text-white text-xs px-3 py-1 rounded-full font-medium">
+                Modo Demo
+            </span>
+        </header>
+
+        <!-- Tarjetas de Resumen -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-xs font-medium text-slate-400 uppercase">Ingresos</p>
+                <h3 class="text-xl font-bold text-emerald-600 mt-1">$<span id="demo-ingresos">500.00</span></h3>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-xs font-medium text-slate-400 uppercase">Gastos</p>
+                <h3 class="text-xl font-bold text-rose-500 mt-1">$<span id="demo-gastos">120.00</span></h3>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-xs font-medium text-slate-400 uppercase">Ahorro (10%)</p>
+                <h3 class="text-xl font-bold text-indigo-600 mt-1">$<span id="demo-ahorro">50.00</span></h3>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-xs font-medium text-slate-400 uppercase">Disponible</p>
+                <h3 class="text-xl font-bold text-slate-800 mt-1">$<span id="demo-disponible">330.00</span></h3>
+            </div>
+        </section>
+
+        <!-- Formulario -->
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-700 mb-3">Probar Agregar Movimiento</h2>
+            <form id="demo-form" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <select id="demo-tipo" class="bg-slate-50 border border-slate-200 rounded-xl p-2 text-sm">
+                    <option value="ingreso">Ingreso</option>
+                    <option value="gasto">Gasto Diario</option>
+                    <option value="cashea">Cuota Cashea</option>
+                </select>
+                <input type="text" id="demo-desc" placeholder="Descripción" required class="bg-slate-50 border border-slate-200 rounded-xl p-2 text-sm">
+                <input type="number" step="0.01" id="demo-monto" placeholder="Monto ($)" required class="bg-slate-50 border border-slate-200 rounded-xl p-2 text-sm">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium p-2 rounded-xl text-sm transition-all">
+                    Agregar
+                </button>
+            </form>
+        </section>
+
+        <!-- Tabla -->
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-700 mb-3">Movimientos de Ejemplo</h2>
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="border-b border-slate-100 text-slate-400 text-xs">
+                        <th class="pb-2">Tipo</th>
+                        <th class="pb-2">Descripción</th>
+                        <th class="pb-2">Monto</th>
+                    </tr>
+                </thead>
+                <tbody id="demo-tabla" class="divide-y divide-slate-50">
+                    <tr>
+                        <td class="py-2 text-emerald-600 font-medium">Ingreso</td>
+                        <td class="py-2 text-slate-700">Pago Quincena</td>
+                        <td class="py-2 font-semibold text-emerald-600">$500.00</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 text-rose-500 font-medium">Gasto</td>
+                        <td class="py-2 text-slate-700">Supermercado</td>
+                        <td class="py-2 font-semibold text-slate-800">$120.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </div>
+
+    <script>
+        let ingresos = 500;
+        let gastos = 120;
+
+        document.getElementById('demo-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const tipo = document.getElementById('demo-tipo').value;
+            const desc = document.getElementById('demo-desc').value;
+            const monto = parseFloat(document.getElementById('demo-monto').value);
+
+            if (tipo === 'ingreso') {
+                ingresos += monto;
+            } else {
+                gastos += monto;
+            }
+
+            const ahorro = ingresos * 0.10;
+            const disponible = ingresos - gastos - ahorro;
+
+            document.getElementById('demo-ingresos').textContent = ingresos.toFixed(2);
+            document.getElementById('demo-gastos').textContent = gastos.toFixed(2);
+            document.getElementById('demo-ahorro').textContent = ahorro.toFixed(2);
+            document.getElementById('demo-disponible').textContent = disponible.toFixed(2);
+
+            const tbody = document.getElementById('demo-tabla');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="py-2 capitalize font-medium ${tipo === 'ingreso' ? 'text-emerald-600' : 'text-rose-500'}">${tipo}</td>
+                <td class="py-2 text-slate-700">${desc}</td>
+                <td class="py-2 font-semibold ${tipo === 'ingreso' ? 'text-emerald-600' : 'text-slate-800'}">$${monto.toFixed(2)}</td>
+            `;
+            tbody.prepend(tr);
+
+            document.getElementById('demo-desc').value = '';
+            document.getElementById('demo-monto').value = '';
+        });
+    </script>
+</body>
+</html>
